@@ -1,0 +1,78 @@
+This is a solver for the boundary boundary value problem
+
+   {
+   {   \Delta u_s(r,t) + dlambda^2 (1+q(r)) u_s(r,t) =  - dlambda^2 q(r) u_i(t)   
+   {
+   {                          ( d u_s(r,t)                      )                         (1)
+   {   lim  \sqrt{r}   sup    ( ----------  - i lambda u_s(r,t) ) = 0,
+   {    r             0<t<2pi (   dr                            )
+   {
+
+where \Delta denotes the Laplacian, the wavenumber dlambda is real-valued, the scattering
+potential q(r) is positive and piecewise smooth with compact support and u_i is an incident 
+wave  satisfying the constant coefficient Helmholtz  equation
+
+   \Delta u_i(r,t)  + dlambda^2 u_i(r,t) = 0    for all 0 < r < \infty and 0 < t < 2 \pi.
+
+The running time of this solver is O(dlambda log(dlambda) ) rather than
+O(dlambda^2), as is typical for solvers for the variable coefficient Helmholtz
+equation in two dimensions.
+
+This solver uses P. Swarztrauber's FFTPACK as well as Vladimir Rokhlin's code
+for evaluating the Hankel functions.  The source code for fftpack can be found in the 
+directory dfftpack and the Hankel function evaluation routines can be found
+in the file "hank103.f".
+
+The solver comprises the following files:
+
+1.  The file utils.f90 is a module containing simple utlity subroutines for printing
+searching, sorting and the like.
+
+2.  The file hank103.f contains Vladimir Rokhlin's code for evaluating the
+Hankel function of the first kind via the three-term recurrence relations
+
+3.  The file chebyshev.f90 contains code for forming and manipulating Chebyshev expansions
+of univariate functions.
+
+4.  The file riccati.f90 contains code for solving the Riccati equation
+r'(t) + (r(t))^2 + q(t) = 0 and for constructing phase functions from the
+resulting solution.
+
+5.  The file pbessel.f90 contains code for constructing solutions of the "perturbed
+Bessel equation" which are nonsingular at 0
+
+6.  The file helmrad.f90 contains code for solving the boundary value problem (1)
+
+7.  The file helmop.f90 contains code for applying the operator 
+   \Delta + lambda^2 (1+q(r)) I  
+
+to functions given on an annulus via a spectral method; it is intended for use
+in testing the helmrad code
+
+------------------------------------------------------------------------------------------
+
+The files listed below contain code for the numerical experiments described in 
+the preprint
+
+   James Bremer, "A quasilinear complexity algorithm for the numerical simulation of
+   scattering from a two-dimensional radially symmetric potential," arXiv:????.????
+
+Excepting the programs found in the files expr_pbessel?.f90, each of the programs
+must be run twice, once in extended precision to generate reference solutions (which are
+stored in files with the suffix ".dat"), and  a second time in double precision to generate 
+timing and accuracy data.  Extended precision  versions of these programs  can be produced by 
+adding an appropriate compiler flag to the FPREC  variable in the  makefile. For instance, 
+if gfortran is being used, then adding "-fdefault-real-8" to FPREC does the trick, and "-r16" 
+is the correct flag for Intel's Fortran  compiler.
+
+8.  The files expr_pbessel?.f90 conduct experiments which measures the performance
+of the solver for the perturbed Bessel equation 
+
+9.  The file expr_bump.f90 conducts an experiment in which the incoming field
+is a planewave and the scattering potential is a simple Gaussian bump
+
+10.  The file expr_volcano.f90 conducts an experiment in which the incoming field is
+a circular wave and the scattering potential resembles a volcano
+
+11.  The file expr_discont.f90 conducts an experiment in which the incoming field
+is a circular wave and the scattering potential is discontinuous
