@@ -232,17 +232,18 @@ allocate ( isings(1000) )
 
 nints   = 0
 
-a = 1.0d-7
 
 dd = -300
 a  = exp( ( dd + dnu*log(2.0d0) - dnu*log(dlambda) +  log_gamma(1+dnu) ) / (dnu+0.5d0) ) 
 a  = min(1.0d-2,a)
 a  = max(1.0d-7,a)
+b  = R
 
-b = R
+! a = 1.0d-7
 
-if (dnu .eq. 0)       a = 1.0d-12
-if (eps .lt. 1.0d-16) a = a**2
+if (dnu .eq. 0)                        a = 1.0d-12
+if (eps .lt. 1.0d-16 .AND. dnu .eq. 0) a = 1.0d-15
+
 
 nn                  = nsings+1
 xsings0(1)          = a
@@ -287,7 +288,7 @@ end do
 
 
 
-
+!
 !  If the last interval is too small and oscillatory, the windowing
 !  algorithm can run into trouble.  Best to simply make it bigger if need be.
 !
@@ -295,7 +296,6 @@ if (ab(2,nints) - ab(1,nints) .lt. 0.1d0) then
 ab(2,nints) = ab(1,nints) + 0.1d0
 endif
 
-!call prind("ab = ",ab(:,1:nints))
 
 !
 ! Traverse the intervals, solving the problem on each interval
@@ -551,6 +551,7 @@ rdataptr       = c_loc(rdata)
 rb = ima*deta
 call riccati_tvp_adap(ier,eps,chebdata,a,b,pbessel_riccati_qfun2,rb,nints,ab, &
  rs,rders,rdataptr)
+
 if  (ier .ne. 0) then
 call prini("in pbessel_oscillatory, riccati_tvp_adap failed with ier = ",ier)
 call prind("eps = ",eps)

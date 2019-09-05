@@ -225,8 +225,9 @@ ima  = (0.0d0,1.0d0)
 R   = 4
 
 jj1 = 4
-jj2 = 8
+jj2 = 17
 jj3 = 17
+jj0 = 7
 
 allocate(xsings(3))
 xsings(1) = 1
@@ -246,7 +247,7 @@ do jj=jj1,jj2
 
 dlambda = 2.0d0**jj
 eps     = eps0*100
-m       = R*dlambda*pi
+m       = R*dlambda*pi/2
 ifout   = 1
 
 ! produce a solution
@@ -260,11 +261,14 @@ call elapsed(t2)
 
 tsolve = t2-t1
 
+dmax    = -1
+tverify = -1
+
 ! verify the accuracy of the obtained solution
 call elapsed(t1)
 
 dmax = 0.0d0
-do ii=1,1
+do ii=0,3
 
 lambda  = dlambda
 n        = m
@@ -340,6 +344,7 @@ call elapsed(t1)
 nn = 50
 allocate(x(nn,nn),xs0(nn),ys0(nn))
 ncount = 0
+
 
 
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,i,xx,yy,rr,tt,val_tot,val_scat)

@@ -297,12 +297,12 @@ type(helmrad_scat)            :: scatdata
 
 type(c_ptr)                   :: userptr
 double precision, allocatable :: xsings(:)
-
+double complex                :: val_tot, val_scat
 
 ima     = (0.0d0,1.0d0)
 pi      = acos(-1.0d0)
 
-dlambda = 32
+dlambda = 2**12
 R       = 4                ! radius of  the scatterer
 R2      = 8                ! dimensions of the region to plot
 
@@ -311,9 +311,11 @@ eps     = 1.0d-12
 ifout   = 1
 ipart   = 1
 
+iwhich = 1
+
 if (dlambda .lt. 32) m = m + 20
 
-iwhich = 2
+
 
 if (iwhich .eq. 3) then
 
@@ -326,17 +328,32 @@ else
 allocate(xsings(0))
 endif
 
+! call plot_q("q.pdf",R,xsings,potfun,userptr)
+! call image_incident(1,"incoming.pdf",R2,dlambda,wavefun,userptr)
 
-call plot_q("q.pdf",R,xsings,potfun,userptr)
-call image_incident(1,"incoming.pdf",R2,dlambda,wavefun,userptr)
 call helmrad_init(ifout,eps,m,xsings,R,dlambda,potfun,userptr,helmdata)
 call helmrad_solve(helmdata,wavefun,userptr,scatdata)
 
-call prinz("scatdata%in_coefs  = ",scatdata%in_coefs)
-call prinz("scatdata%tot_coefs  = ",scatdata%tot_coefs)
-call prinz("scatdata%scat_coefs = ",scatdata%scat_coefs)
+nnz = 0
+do i=1,m
+if( abs(scatdata%tot_coefs(i)) .gt.  1.0d-30) nnz = nnz+1
+end do
 
-call image_output(helmdata,scatdata,1,"total.pdf","scattered.pdf",R2,dlambda,wavefun,userptr)
+dd1 = nnz
+dd2 = 2*m+1
+
+print *,nnz,2*m+1,dd1/dd2
+
+! r = R
+! t = pi/4
+! call helmrad_eval(helmdata,scatdata,wavefun,userptr,r,t,val_tot,val_scat)
+! stop
+
+! call prinz("scatdata%in_coefs  = ",scatdata%in_coefs)
+! call prinz("scatdata%tot_coefs  = ",scatdata%tot_coefs)
+!call prinz("scatdata%scat_coefs = ",scatdata%scat_coefs)
+
+!call image_output(helmdata,scatdata,1,"total.pdf","scattered.pdf",R2,dlambda,wavefun,userptr)
 
 
 end program

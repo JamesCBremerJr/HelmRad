@@ -237,10 +237,11 @@ eps0 = epsilon(0.0d0)
 pi   = acos(-1.0d0)
 ima  = (0.0d0,1.0d0)
 
-R   = 4
-jj1 = 4
-jj2 = 8
-jj3 = 17
+R    = 4
+jj1  = 4       ! first value of k is 2^jj1
+jj2  = 17      ! compute extended precision solution up 2^jj2
+jj3  = 17      ! compute double precision solution up 2^jj3
+jj0  = 8       ! perform spectral test up to this power of 2
 
 allocate(xsings(0))
 
@@ -257,12 +258,11 @@ do jj=jj1,jj2
 
 dlambda = 2.0d0**jj
 eps     = eps0*100
-m       = R*dlambda*pi
+m       = R*dlambda*pi/2
 ifout   = 1
 
 ! produce a solution
 
-call prin2("dlambda = ",dlambda)
 
 call elapsed(t1)
 
@@ -272,12 +272,16 @@ call elapsed(t2)
 
 tsolve = t2-t1
 
+tverify = -1
+dmax    = -1
+
 
 ! verify the accuracy of the obtained solution
+if (jj .le. jj0) then
 call elapsed(t1)
 
 dmax = 0.0d0
-do ii=3,3
+do ii=0,3
 
 lambda  = dlambda
 n        = m
@@ -341,10 +345,10 @@ end do
 call elapsed(t2)
 
 tverify = t2-t1
+endif
 
 
 ! sample the solution and output the samples to the disk
-call elapsed(t1)
 nn = 50
 allocate(x(nn,nn),xs0(nn),ys0(nn))
 ncount = 0
@@ -386,23 +390,19 @@ write (iw,"(D24.16)")   x
 
 
 deallocate(x,xs0,ys0)
-
-call elapsed(t2)
-
 toutput = t2-t1
 
 
 
+! lambda =  dlambda
+! write (*,"(I8.8,' ',D10.3,' ',D10.3, ' ',D10.3, ' ',D10.3)") &
+!   lambda,tsolve,tverify,dmax
 
-lambda =  dlambda
-write (*,"(I8.8,' ',D10.3,' ',D10.3, ' ',D10.3, ' ',D10.3, ' ',D10.3)") &
-  lambda,tsolve,tverify,toutput,dmax
+! write (13,"(I8.8,' ',D10.3,' ',D10.3, ' ',D10.3, ' ',D10.3)") &
+!   lambda,tsolve,tverify,dmax
 
-write (13,"(I8.8,' ',D10.3,' ',D10.3, ' ',D10.3, ' ',D10.3, ' ',D10.3)") &
-  lambda,tsolve,tverify,toutput,dmax
-
-write (*,*) ""
-write (13,*) ""
+! write (*,*) ""
+! write (13,*) ""
 
 end do
 
@@ -569,8 +569,6 @@ write (*,"(I8.8,' ',I8.8,' ',D14.5,' ',D14.5,' ',D14.5,' ',D14.5,' ',D14.5)")  &
   lambda,m,tinit,ratio1,tsolve,ratio2,derr
 write (13,"(I8.8,' ',I8.8,' ',D14.5,' ',D14.5,' ',D14.5,' ',D14.5,' ',D14.5)")  &
   lambda,m,tinit,ratio1,tsolve,ratio2,derr
-
-
 
 
 

@@ -12,7 +12,7 @@ export OMP_NUM_THREADS
 
 # -fdefault-real-8 should be added to FPREC to promote doubles to REAL*16
 FCOMP     = gfortran-7
-FPREC     = 
+FPREC     = -freal-8-real-10
 FOPTS     = -w -O2 -march=native -fopenmp  $(FPREC)
 LDOPT     = 
 PYTHON    = python

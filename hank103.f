@@ -1,6 +1,7 @@
-        subroutine hanks103(z,hanks,n,ifexpon)
+        subroutine hanks103(z,hanks,n,ifexpon,m)
+        use ieee_arithmetic
         implicit double precision (a-h,o-z)
-        double complex z,hanks(1),cd,cdd
+        double complex z,hanks(1),cd,cdd,cddd
 c 
 c       This subroutine evaluates the first n+1 Hankel functions of the
 c       argument z. The user also has the option of evaluating the
@@ -28,6 +29,15 @@ c  hanks - the first n+1 Hankel functions of the (complex) argument z.
 c        Please note that hanks(1) is the Hankel function of order 0,
 c        hanks(2) is the Hankel function of order 1, ..., hanks(n+1)
 c        is the Hankel function of order n
+c
+c  m - the number of Hankel functions evaluated before overflow occurred
+c
+
+        eps0 = epsilon(0.0d0)
+        dbig = 10.0d0**250
+        if (eps0 .lt. 1.0d-16) dbig = 10.0d0**4000
+!
+        m = 2
 c 
 c       . . . evaluate the functions h0,h1
 c 
@@ -43,7 +53,14 @@ c
         i=i1-1
 c 
 cccc        hanks(i1+1)=(2*i)/z*hanks(i1)-hanks(i1-1)
-        hanks(i1+1)=cdd*hanks(i1)-hanks(i1-1)
+        cddd = cdd*hanks(i1)-hanks(i1-1)
+        dd   = abs(cddd)
+c
+        if (dd .gt. dbig) return
+        if (isnan(dd))    return
+c 
+        hanks(i1+1) = cddd
+        m           = i1+1
 c 
         cdd=cdd+cd
  1200 continue

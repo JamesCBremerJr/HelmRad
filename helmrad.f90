@@ -236,15 +236,17 @@ if (ifout .eq. 1) then
 !$OMP CRITICAL
 ncount = ncount + 1
 call elapsed(t2)
-write (*,"(A,I9,' / ',I9,A,F13.4,A)",advance='no'), &
-  'helmrad_init: ',ncount,m+1,',  elapsed time = ',t2-t1,' seconds'
+write (*,"(A,F20.4,'   ',I9,' / ',I9,A,F13.4,A)",advance='no'), &
+  'helmrad_init: dlambda = ',dlambda,ncount,m+1,',  elapsed time = ',t2-t1,' seconds'
 write (*,"(A)",advance='no'),13
 !$OMP END CRITICAL
 endif
 
+
 end do
 !$OMP END DO
 !$OMP END PARALLEL
+
 
 if (ifout .eq. 1) then
 write (*,"(A)") ""
@@ -343,15 +345,20 @@ end do
 val0     = 0
 val_scat = 0
 
+
 z        = dlambda*R
 ifexpon  = 1
-allocate(hanks(0:m+1))
-call hanks103(z,hanks,m+1,ifexpon)
+allocate(hanks(0:m+10))
+call hanks103(z,hanks,m+2,ifexpon,mm)
+mm = mm-3
+
+scatdata%tot_coefs  = 0
+scatdata%scat_coefs = 0
 
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(n,nn,ifosc,psi,psip,s1,aval,apval,appval, &
 !$OMP   uval,uder,amatr,det,zc,zd,za,zb,hval,hval1,hval2,hder,uval0,uder0)
- !$OMP DO SCHEDULE(dynamic)
-do n=0,m
+!$OMP DO SCHEDULE(dynamic)
+do n=0,mm
 
 nn = abs(n)
 
@@ -385,7 +392,6 @@ amatr(2,1) = uder
 amatr(2,2) = -hder
 
 det = amatr(1,1)*amatr(2,2) - amatr(1,2) * amatr(2,1)
-
 
 zc = scatdata%in_coefs(n)
 zd = scatdata%inder_coefs(n)
@@ -486,6 +492,7 @@ ts(1) = t
 call wavefun(dlambda,1,rs,ts,vals,ders,userptr)
 val_scat = val_tot - vals(1)
 
+
 return
 endif
 
@@ -500,10 +507,11 @@ val_scat = 0
 z        = dlambda*r
 ifexpon  = 1
 
-allocate(hanks(0:m))
-call hanks103(z,hanks,m,ifexpon)
+allocate(hanks(0:m+10))
+call hanks103(z,hanks,m+1,ifexpon,mm)
+mm = mm-2
 
-do n=0,m
+do n=0,mm
 nn   = abs(n)
 
 val_scat  = val_scat + hanks(n) * exp(ima*n*t)*scatdata%scat_coefs(n)
@@ -513,7 +521,6 @@ val_scat  = val_scat + hanks(n) * exp(-ima*n*t)*scatdata%scat_coefs(-n)
 endif
 
 end do
-
 
 rs(1) = r
 ts(1) = t

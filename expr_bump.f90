@@ -215,10 +215,11 @@ eps0 = epsilon(0.0d0)
 pi   = acos(-1.0d0)
 ima  = (0.0d0,1.0d0)
 
-R   = 4
-jj1 = 4
-jj2 = 9
-jj3 = 17
+R    = 4
+jj1  = 4       ! first value of k is 2^jj1
+jj2  = 17      ! compute extended precision solution up 2^jj2
+jj3  = 17      ! compute double precision solution up 2^jj3
+jj0  = 8       ! perform spectral test up to this power of 2
 
 allocate(xsings(0))
 
@@ -235,26 +236,31 @@ do jj=jj1,jj2
 
 dlambda = 2.0d0**jj
 eps     = eps0*100
-m       = R*dlambda*pi
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
+!m       = R*dlambda*pi
+m       = R*dlambda*pi/2
+
 ifout   = 1
 
 ! produce a solution
 
-call prin2("dlambda = ",dlambda)
 
 call elapsed(t1)
 call helmrad_init(ifout,eps,m,xsings,R,dlambda,potfun,userptr,helmdata)
 call helmrad_solve(helmdata,wavefun,userptr,scatdata)
 call elapsed(t2)
 
+
 tsolve = t2-t1
 
+tverify = -1
+dmax    = -1
 
-! verify the accuracy of the obtained solution
+! verify the accuracy of the obtained solution via a spectral method when jj <= jj0
+if (jj .le. jj0) then
 call elapsed(t1)
-
 dmax = 0.0d0
-do ii=3,3
+do ii=0,3
 
 lambda  = dlambda
 n        = m
@@ -264,7 +270,6 @@ if (jj .eq. 5) l = 60
 if (jj .eq. 6) l = 80
 if (jj .eq. 7) l = 130
 if (jj .eq. 8) l = 250
-
 if (ii .eq. 0) l = l *2
 
 R1   =  0.0d0+1.0d0*ii
@@ -317,10 +322,10 @@ end do
 call elapsed(t2)
 
 tverify = t2-t1
+endif
 
 
 ! sample the solution and output the samples to the disk
-call elapsed(t1)
 nn = 50
 allocate(x(nn,nn),xs0(nn),ys0(nn))
 ncount = 0
@@ -338,16 +343,11 @@ ys0(j) = yy
 
 rr  = sqrt(xx**2+yy**2)
 tt  = atan2(yy,xx)
-call helmrad_eval(helmdata,scatdata,wavefun,userptr,rr,tt,val_tot,val_scat)
 
+call helmrad_eval(helmdata,scatdata,wavefun,userptr,rr,tt,val_tot,val_scat)
 x(i,j) = val_tot
 
 end do
-
-!$OMP CRITICAL
-ncount=ncount+1
-write (*,'("     ",I5.5,"/",I5.5,A)',advance='no')  ncount,nn,13
-!$OMP END CRITICAL
 
 end do
 !$OMP END DO
@@ -363,19 +363,13 @@ write (iw,"(D24.16)")   x
 
 deallocate(x,xs0,ys0)
 
-call elapsed(t2)
 
-toutput = t2-t1
 
 lambda =  dlambda
-write (*,"(I8.8,' ',D10.3,' ',D10.3, ' ',D10.3, ' ',D10.3, ' ',D10.3)") &
-  lambda,tsolve,tverify,toutput,dmax
+! write (*,"(I8.8,' ',D10.3,' ',D10.3, ' ',D10.3, ' ',D10.3)") &
+!   lambda,tsolve,tverify,dmax
 
-write (13,"(I8.8,' ',D10.3,' ',D10.3, ' ',D10.3, ' ',D10.3, ' ',D10.3)") &
-  lambda,tsolve,tverify,toutput,dmax
-
-write (*,*) ""
-write (13,*) ""
+! write (*,*) ""
 
 end do
 
@@ -404,7 +398,6 @@ call helmrad_init(ifout,eps,m,xsings,R,dlambda,potfun,userptr,helmdata)
 call helmrad_solve(helmdata,wavefun,userptr,scatdata)
 call image_output(helmdata,scatdata,ipart,"bump_total.pdf","bump_scattered.pdf",&
   2*R,dlambda,wavefun,userptr)
-
 
 
 !
@@ -476,10 +469,8 @@ tsolve = t2-t1
 
 
 if (jj .le. jj2) then
-
 read (iw,"(D24.16)")    dlambda0
 read (iw,"(I9.9)")      nn
-
 allocate(xs0(nn),ys0(nn),x(nn,nn),y(nn,nn))
 
 
@@ -487,11 +478,11 @@ read (iw,"(D24.16)")   xs0
 read (iw,"(D24.16)")   ys0
 read (iw,"(D24.16)")   x
 
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(i,j,xx,yy,rr,tt,val_tot,val_scat)
+
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(i,j,xx,yy,rr,tt,val_tot,val_scat,dd)
 !$OMP DO
 do i=1,nn
 do j=1,nn
-
 xx     = xs0(i)
 yy     = ys0(j)
 
@@ -500,13 +491,12 @@ tt  = atan2(yy,xx)
 call helmrad_eval(helmdata,scatdata,wavefun,userptr,rr,tt,val_tot,val_scat)
 
 y(i,j) = val_tot
-
+dd     = abs(val_tot-x(i,j))
 
 end do
 end do
 !$OMP END DO
 !$OMP END PARALLEL
-
 
 derr = maxval(abs(x-y))
 deallocate(x,y,xs0,ys0)
@@ -542,11 +532,9 @@ write (13,"(I8.8,' ',I8.8,' ',D14.5,' ',D14.5,' ',D14.5,' ',D14.5,' ',D14.5)")  
   lambda,m,tinit,ratio1,tsolve,ratio2,derr
 
 
-
 end do
 
 close(iw)
-
 
 
 !
@@ -595,7 +583,15 @@ call write_table_next(iw)
 if (derrs(jj) == -1) then
 write (iw,"(A)",advance='no') "-"
 else
+
+if (jj .le. jj0) then
 call write_table_double(iw,derrs(jj))
+else
+write(iw,'(A)',advance='no') "("
+call write_table_double(iw,derrs(jj))
+write(iw,'(A)',advance='no') ") "
+endif
+
 endif
 
 call write_table_next(iw)
