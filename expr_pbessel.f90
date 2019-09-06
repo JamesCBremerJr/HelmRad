@@ -180,18 +180,18 @@ open(iw,FILE='pbessel_graph1.py')
 call pyplot_begin(iw,istatus)
 
 istyle = 1
-call pyplot_add_function(istatus,1,"",nn,dnus,dtimes)
-call pyplot_add_function(istatus,9,"",nn,dnus,dlog)
+call pyplot_add_function(istatus,1,"Runtime",nn,dnus,dtimes)
+call pyplot_add_function(istatus,10,"k log(k)",nn,dnus,dlog)
 
 call pyplot_ylabel(istatus,"Solve time (seconds)")
 call pyplot_xlabel(istatus,"Order n")
 call pyplot_xlogscale2(istatus)
 
 
-write(iw,"(A)") "ax.text(0.90, 0.90, 'log(n)',"
-write(iw,"(A)") "verticalalignment='bottom', horizontalalignment='right',"
-write(iw,"(A)") "transform=ax.transAxes,"
-write(iw,"(A)") "color='black', fontsize=12)"
+! write(iw,"(A)") "ax.text(0.90, 0.90, 'log(n)',"
+! write(iw,"(A)") "verticalalignment='bottom', horizontalalignment='right',"
+! write(iw,"(A)") "transform=ax.transAxes,"
+! write(iw,"(A)") "color='black', fontsize=12)"
 
 idelta=  delta
 lambda= dlambda
@@ -309,17 +309,17 @@ open(iw,FILE='pbessel_graph3.py')
 call pyplot_begin(iw,istatus)
 
 istyle = 1
-call pyplot_add_function(istatus,1,"",nn,dlambdas,dtimes)
-call pyplot_add_function(istatus,9,"",nn,dlambdas,dlog)
+call pyplot_add_function(istatus,1,"Runtime",nn,dlambdas,dtimes)
+call pyplot_add_function(istatus,10,"k log(k)",nn,dlambdas,dlog)
 
 call pyplot_ylabel(istatus,"Solve time (seconds)")
 call pyplot_xlabel(istatus,"Wavenumber k")
 call pyplot_xlogscale2(istatus)
 
-write(iw,"(A)") "ax.text(0.90, 0.90, 'log(k)',"
-write(iw,"(A)") "verticalalignment='bottom', horizontalalignment='right',"
-write(iw,"(A)") "transform=ax.transAxes,"
-write(iw,"(A)") "color='black', fontsize=12)"
+! write(iw,"(A)") "ax.text(0.90, 0.90, 'log(k)',"
+! write(iw,"(A)") "verticalalignment='bottom', horizontalalignment='right',"
+! write(iw,"(A)") "transform=ax.transAxes,"
+! write(iw,"(A)") "color='black', fontsize=12)"
 
 idelta=  delta
 lambda= dlambda
@@ -436,18 +436,18 @@ open(iw,FILE='pbessel_graph5.py')
 call pyplot_begin(iw,istatus)
 
 istyle = 1
-call pyplot_add_function(istatus,1,"",nn,dlambdas,dtimes)
-call pyplot_add_function(istatus,9,"",nn,dlambdas,dlog)
+call pyplot_add_function(istatus,1,"Runtime",nn,dlambdas,dtimes)
+call pyplot_add_function(istatus,10,"k log(k)",nn,dlambdas,dlog)
 
 call pyplot_ylabel(istatus,"Solve time (seconds)")
 call pyplot_xlabel(istatus,"n=k/2")
 call pyplot_xlogscale2(istatus)
 
 
-write(iw,"(A)") "ax.text(0.90, 0.90, 'log(n)',"
-write(iw,"(A)") "verticalalignment='bottom', horizontalalignment='right',"
-write(iw,"(A)") "transform=ax.transAxes,"
-write(iw,"(A)") "color='black', fontsize=12)"
+! write(iw,"(A)") "ax.text(0.90, 0.90, 'log(n)',"
+! write(iw,"(A)") "verticalalignment='bottom', horizontalalignment='right',"
+! write(iw,"(A)") "transform=ax.transAxes,"
+! write(iw,"(A)") "color='black', fontsize=12)"
 
 idelta=  delta
 lambda= dlambda
@@ -562,18 +562,18 @@ open(iw,FILE='pbessel_graph7.py')
 call pyplot_begin(iw,istatus)
 
 istyle = 1
-call pyplot_add_function(istatus,1,"",nn,dlambdas,dtimes)
-call pyplot_add_function(istatus,9,"",nn,dlambdas,dlog)
+call pyplot_add_function(istatus,1,"Runtime",nn,dlambdas,dtimes)
+call pyplot_add_function(istatus,10,"k log(k)",nn,dlambdas,dlog)
 
 call pyplot_ylabel(istatus,"Solve time (seconds)")
 call pyplot_xlabel(istatus,"n=k")
 call pyplot_xlogscale2(istatus)
 
 
-write(iw,"(A)") "ax.text(0.90, 0.90, 'log(n)',"
-write(iw,"(A)") "verticalalignment='bottom', horizontalalignment='right',"
-write(iw,"(A)") "transform=ax.transAxes,"
-write(iw,"(A)") "color='black', fontsize=12)"
+! write(iw,"(A)") "ax.text(0.90, 0.90, 'log(n)',"
+! write(iw,"(A)") "verticalalignment='bottom', horizontalalignment='right',"
+! write(iw,"(A)") "transform=ax.transAxes,"
+! write(iw,"(A)") "color='black', fontsize=12)"
 
 idelta=  delta
 lambda= dlambda

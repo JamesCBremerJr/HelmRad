@@ -1,4 +1,4 @@
-module expr_volcano_functions
+module expr_discont_functions
 
 use utils
 use iso_c_binding
@@ -11,7 +11,10 @@ implicit double precision (a-h,o-z)
 double precision          :: rs(n), qs(n), qders(n)
 type(c_ptr)               :: userptr
 
-qs = 14*rs**2 * exp(-5*rs**2)
+
+qs = 0
+if (ising .eq. 1) qs = 1.0d0
+if (ising .eq. 3) qs = 2.0d0
 
 end subroutine
 
@@ -21,7 +24,7 @@ implicit double precision (a-h,o-z)
 double precision          :: ts(n),rs(n)
 double complex            :: vals(n), ders(n)
 type(c_ptr)               :: userptr
-double complex            :: ima, z, h0, h1, z0
+double complex            :: ima
 data                      ima / (0.0d0,1.0d0) /
 data                      pi  / 3.14159265358979323846264338327950288d0 /
 
@@ -30,28 +33,9 @@ t0    = pi /  4
 vals  = exp(ima * rs * dlambda * cos(ts-t0) )
 ders  = exp(ima * rs * dlambda * cos(ts-t0) ) * ima * dlambda * cos(ts-t0)
 
-! ! circular wave centered at (x0,y0)
-! x0 = 0
-! y0 = 6
-
-! do i=1,n
-! r       = rs(i)
-! t       = ts(i)
-! x       = r*cos(t)
-! y       = r*sin(t)
-! z0      = x0 + ima*y0
-! z       = x  + ima*y
-
-! z       = dlambda*abs(z-z0)
-! ifexpon = 1
-! call hank103(z,h0,h1,ifexpon)
-
-! vals(i) = h0
-! ders(i) = dlambda*h1*(-r+x0*cos(t) + y0*sin(t))/sqrt((x0-x)**2+(y0-y)**2)
-
-! end do
 
 end subroutine
+
 
 
 
@@ -182,7 +166,6 @@ ts(1) = atan2(y,x)
 
 call helmrad_eval(helmdata,scatdata,wavefun,userptr,rs(1),ts(1),val_tot,val_scat)
 
-
 utot(nn-j+1,nn-i+1)  = val_tot
 uscat(nn-j+1,nn-i+1) = val_scat
 
@@ -203,15 +186,16 @@ call show_matrix(0,"x","y",-R,R,-R,R,filename2,amatr)
 
 end subroutine
 
+
 end module
 
 
-program expr_volcano
+program expr_discont
 use utils
 use chebyshev
 use helmrad
 use helmop
-use expr_volcano_functions
+use expr_discont_functions
 
 implicit double precision (a-h,o-z)
 
@@ -220,26 +204,29 @@ type(helmrad_scat)              :: scatdata
 type(c_ptr)                     :: userptr
 
 double precision, allocatable   :: coefs(:), rs(:), ts(:),qs(:)
-
 double precision, allocatable   :: dinits(:),dsolves(:),derrs(:),dlambdas(:),dlogs1(:),dlogs2(:)
 integer, allocatable            :: ms(:)
 
 double complex                  :: val,ima,val0,val_tot,val_scat
 double complex, allocatable     :: x(:,:), y(:,:)
 
-double precision, allocatable   :: xsings(:),xs0(:),ys0(:),xsave(:,:),amatr(:,:)
+double precision, allocatable   :: xsings(:),xs0(:),ys0(:),xsave(:,:),amatr(:,:),zs0(:)
 
 eps0 = epsilon(0.0d0)
 pi   = acos(-1.0d0)
 ima  = (0.0d0,1.0d0)
 
-R    = 4
-jj1  = 4       ! first value of k is 2^jj1
-jj2  = 17      ! compute extended precision solution up 2^jj2
-jj3  = 17      ! compute double precision solution up 2^jj3
-jj0  = 8       ! perform spectral test up to this power of 2
+R   = 4
 
-allocate(xsings(0))
+jj1 = 4
+jj2 = 17
+jj3 = 17
+jj0 = 8
+
+allocate(xsings(3))
+xsings(1) = 1
+xsings(2) = 2
+xsings(3) = 3
 
 !
 !  Extended precision precompuation
@@ -248,7 +235,7 @@ allocate(xsings(0))
 if (eps0 .lt. 1.0d-16) then
 
 iw = 20
-open(iw,FILE='volcano.dat')
+open(iw,FILE='discont.dat')
 
 do jj=jj1,jj2
 
@@ -259,18 +246,16 @@ ifout   = 1
 
 ! produce a solution
 
+!call prin2("dlambda = ",dlambda)
 
 call elapsed(t1)
-
 call helmrad_init(ifout,eps,m,xsings,R,dlambda,potfun,userptr,helmdata)
 call helmrad_solve(helmdata,wavefun,userptr,scatdata)
 call elapsed(t2)
 
-tsolve = t2-t1
-
-tverify = -1
+tsolve  = t2-t1
 dmax    = -1
-
+tverify = -1
 
 ! verify the accuracy of the obtained solution
 if (jj .le. jj0) then
@@ -284,11 +269,10 @@ n        = m
 
 if (jj .eq. 4) l = 40
 if (jj .eq. 5) l = 60
-if (jj .eq. 6) l = 80
-if (jj .eq. 7) l = 130
+if (jj .eq. 6) l = 100
+if (jj .eq. 7) l = 140
 if (jj .eq. 8) l = 200
-
-if (ii .eq. 0) l = l *2
+if (ii .eq. 0) l = l*2
 
 R1   =  0.0d0+1.0d0*ii
 R2   =  1.000+1.0d0*ii
@@ -296,14 +280,14 @@ R2   =  1.000+1.0d0*ii
 if (ii .eq. 0) R1 = 1.0d-3
 
 allocate(x(2*n+1,l+1),y(2*n+1,l+1),qs(l+1))
-
 call helmop_init(R1,R2,n,l,ts,rs)
+
 
 ncount = 0
 call elapsed(tt1)
 
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,i,rr,tt,val_tot,val_scat)
-!$OMP DO SCHEDULE(DYNAMIC)
+!!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,i,rr,tt,val_tot,val_scat)
+!!$OMP DO SCHEDULE(DYNAMIC)
 do i=1,2*n+1
 do j=1,l+1
 tt = ts(i)
@@ -313,19 +297,24 @@ x(i,j) = val_tot
 end do
 
 
-!$OMP CRITICAL
+!!$OMP CRITICAL
 call elapsed(tt2)
 ncount=ncount+1
 write (*, '("     ",I5.5,"/",I5.5," ",D14.5,A)',advance='no')  ncount,2*n+1,tt2-tt1,13
-!$OMP END CRITICAL
+!!$OMP END CRITICAL
 
 end do
-!$OMP END DO
-!$OMP END PARALLEL
+!!$OMP END DO
+!!$OMP END PARALLEL
 
 call elapsed(tt2)
 
-call potfun(1,l+1,rs,qs,userptr)
+ising=4
+if (ii .eq. 0) ising = 1
+if (ii .eq. 1) ising = 2
+if (ii .eq. 2) ising = 3
+
+call potfun(ising,l+1,rs,qs,userptr)
 call helmop_helmholtz(dlambda,R1,R2,n,l,ts,rs,qs,x,y)
 
 dmax0 = maxval(abs(y))
@@ -335,6 +324,7 @@ write (*,*)  R1,R2,dmax0,tt2-tt1
 write (13,*) R1,R2,dmax0,tt2-tt1
 
 deallocate(x,y,qs)
+
 
 end do
 
@@ -350,7 +340,8 @@ allocate(x(nn,nn),xs0(nn),ys0(nn))
 ncount = 0
 
 
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,i,xx,yy,rr,tt,val_tot,val_scat)
+
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,i,xx,yy,rr,tt,val_tot,val_scat,dd)
 !$OMP DO SCHEDULE(DYNAMIC)
 do i=1,nn
 xx     = -R + 2*R * (i-1.0d0) / (nn-1.0d0)
@@ -366,11 +357,17 @@ call helmrad_eval(helmdata,scatdata,wavefun,userptr,rr,tt,val_tot,val_scat)
 
 x(i,j) = val_tot
 
+dd = abs(val_tot)
+if (isnan(dd)) then
+print *,dlambda,xx,yy,rr,tt,"NaN"
+stop
+endif
+
 end do
 
 !$OMP CRITICAL
-ncount=ncount+1
-write (*,'("     ",I5.5,"/",I5.5,A)',advance='no')  ncount,nn,13
+! ncount=ncount+1
+! write (*,'("     ",I5.5,"/",I5.5,A)',advance='no')  ncount,nn,13
 !$OMP END CRITICAL
 
 end do
@@ -386,8 +383,8 @@ write (iw,"(D24.16)")   x
 
 
 deallocate(x,xs0,ys0)
-toutput = t2-t1
 
+call elapsed(t2)
 
 
 ! lambda =  dlambda
@@ -408,45 +405,9 @@ stop
 
 endif
 
-
-!
-!  Plot the function q(t)
-!
-
-if (allocated(xs0)) deallocate(xs0)
-if (allocated(ys0)) deallocate(ys0)
-
-nn = 1000
-allocate(xs0(nn),ys0(nn))
-
-a0 = 0
-b0 = R
-
-do i=1,nn
-xs0(i) = a0 + (i-1.0d0) /(nn-1.0d0) * (b0-a0)
-end do
-
-call potfun(1,nn,xs0,ys0,userptr)
-
-
-iw = 101
-open(iw,FILE='volcano_q.py')
-call pyplot_begin(iw,istatus)
-
-call pyplot_add_function(istatus,1,"",nn,xs0,ys0)
-call pyplot_ylabel(istatus,"q(r)")
-call pyplot_xlabel(istatus,"r")
-
-
-call pyplot_end(istatus,"volcano_q.pdf")
-call system("python volcano_q.py")
-
-deallocate(xs0,ys0)
-
 !
 !  Produce images of the incident field, the total field and the scatterd field
 !
-
 call prina("producing images at 16 wavelengths")
 
 dlambda = 16
@@ -457,25 +418,60 @@ m       = R*dlambda*pi/2
 R2      = 2*R
 ipart   = 1              ! display real parts
 
-call image_incident(ipart,"volcano_incident.pdf",2*R,dlambda,wavefun,userptr)
+call image_incident(ipart,"discont_incident.pdf",2*R,dlambda,wavefun,userptr)
 call helmrad_init(ifout,eps,m,xsings,R,dlambda,potfun,userptr,helmdata)
 call helmrad_solve(helmdata,wavefun,userptr,scatdata)
-call image_output(helmdata,scatdata,ipart,"volcano_total.pdf","volcano_scattered.pdf",&
+call image_output(helmdata,scatdata,ipart,"discont_total.pdf","discont_scattered.pdf",&
   2*R,dlambda,wavefun,userptr)
 
-write (*,*) ""
-write (13,*) ""
 
+!
+!  Plot the function q(t)
+!
+
+nn = 1000
+mm = nn/4
+allocate(xs0(nn),ys0(nn))
+
+a0 = 0
+b0 = R
+
+do i=1,nn
+xs0(i) = a0 + (i-1.0d0) /(nn-1.0d0) * (b0-a0)
+end do
+
+
+call potfun(1,mm,xs0(0*mm+1:1*mm),ys0(0*mm+1:1*mm),userptr)
+call potfun(2,mm,xs0(1*mm+1:2*mm),ys0(1*mm+1:2*mm),userptr)
+call potfun(3,mm,xs0(2*mm+1:3*mm),ys0(2*mm+1:3*mm),userptr)
+call potfun(4,mm,xs0(3*mm+1:4*mm),ys0(3*mm+1:4*mm),userptr)
+
+iw = 101
+open(iw,FILE='discont_q.py')
+call pyplot_begin(iw,istatus)
+
+call pyplot_add_function(istatus,1,"",nn,xs0,ys0)
+call pyplot_ylabel(istatus,"q(t)")
+call pyplot_xlabel(istatus,"t")
+
+write(iw,"(A,I12,A,I12,A)") "plt.ylim(-1,4)"
+
+call pyplot_end(istatus,"discont_q.pdf")
+call system("python discont_q.py")
+deallocate(xs0,ys0)
 
 !
 !  Verification/timing in double precision
 !
 
+write (*,*) ""
+write (13,*) ""
+
 allocate(dinits(jj1:jj3),dsolves(jj1:jj3),ms(jj1:jj3),derrs(jj1:jj3))
 allocate(dlambdas(jj1:jj3),dlogs1(jj1:jj3),dlogs2(jj1:jj3))
 
 iw = 20
-open(iw,FILE='volcano.dat',STATUS='old')
+open(iw,FILE='discont.dat',STATUS='old')
 
 do jj=jj1,jj3
 
@@ -483,7 +479,7 @@ do jj=jj1,jj3
 dlambda = 2.0d0**jj
 eps     = 1.0d-12
 R       = 4
-ifout   = 0
+ifout   = 1
 m       = R*dlambda*pi/2
 
 call elapsed(t1)
@@ -498,6 +494,9 @@ tsolve = t2-t1
 
 
 
+! call prinz("tot_coefs = ",scatdata%tot_coefs)
+! call prinz("scat_coefs = ",scatdata%scat_coefs)
+
 if (jj .le. jj2) then
 
 read (iw,"(D24.16)")    dlambda0
@@ -510,6 +509,9 @@ read (iw,"(D24.16)")   xs0
 read (iw,"(D24.16)")   ys0
 read (iw,"(D24.16)")   x
 
+
+! call prin2("xs0 = ",xs0)
+! call prin2("ys0 = ",ys0)
 
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(i,j,xx,yy,rr,tt,val_tot,val_scat)
 !$OMP DO
@@ -531,6 +533,8 @@ end do
 !$OMP END DO
 !$OMP END PARALLEL
 
+
+! call prinz("y = ",y)
 
 derr = maxval(abs(x-y))
 deallocate(x,y,xs0,ys0)
@@ -568,9 +572,12 @@ write (13,"(I8.8,' ',I8.8,' ',D14.5,' ',D14.5,' ',D14.5,' ',D14.5,' ',D14.5)")  
 
 
 
+
+
 end do
 
 close(iw)
+
 
 
 
@@ -579,7 +586,7 @@ close(iw)
 !
 
 iw = 25
-open(iw,FILE='volcano_table.tex')
+open(iw,FILE='discont_table.tex')
 
 
 write(iw,'(A)') "\begin{tabular}{crccc}"
@@ -590,6 +597,7 @@ write(iw,'(A)', advance='no') "$k$                                &"
 write(iw,'(A)', advance='no') "$m$                                &"
 write(iw,'(A)', advance='no') "Maximum absolute                   &"
 write(iw,'(A)', advance='no') "Precomp time                       &"
+
 write(iw,'(A)'              ) "Solve time                        \\"
  
 write(iw,'(A)', advance='no') "                                   &"
@@ -620,14 +628,14 @@ if (derrs(jj) == -1) then
 write (iw,"(A)",advance='no') "-"
 else
 
-if (jj .le. jj0 )then
+
+if (jj .le. jj0) then
 call write_table_double(iw,derrs(jj))
 else
 
-write (iw,"(A)",advance="no") "$\left("
+write(iw,'(A)',advance='no') "("
 call write_table_double(iw,derrs(jj))
-write (iw,"(A)",advance="no") "$\right)"
-
+write(iw,'(A)',advance='no') ") "
 endif
 
 endif
@@ -659,7 +667,7 @@ close(iw)
 nn = jj3-jj1+1
 iw = 101
 
-open(iw,FILE='volcano_graph1.py')
+open(iw,FILE='discont_graph1.py')
 
 call pyplot_begin(iw,istatus)
 
@@ -677,14 +685,14 @@ call pyplot_xlabel(istatus,"Wavenumber k")
 call pyplot_ylabel(istatus,"Precomputation time (seconds)")
 call pyplot_xlogscale2(istatus)
 
-call pyplot_end(istatus,"volcano_graph1.pdf")
-call system("python volcano_graph1.py")
+call pyplot_end(istatus,"discont_graph1.pdf")
+call system("python discont_graph1.py")
 
 
 
 
 
-open(iw,FILE='volcano_graph2.py')
+open(iw,FILE='discont_graph2.py')
 
 call pyplot_begin(iw,istatus)
 
@@ -695,8 +703,8 @@ call pyplot_xlabel(istatus,"Wavenumber k")
 call pyplot_ylabel(istatus,"Solve time (seconds)")
 call pyplot_xlogscale2(istatus)
 
-call pyplot_end(istatus,"volcano_graph2.pdf")
-call system("python volcano_graph2.py")
+call pyplot_end(istatus,"discont_graph2.pdf")
+call system("python discont_graph2.py")
 
 
 

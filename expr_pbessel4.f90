@@ -258,13 +258,13 @@ open(iw,FILE='pbessel_graph13.py')
 call pyplot_begin(iw,istatus)
 
 
-call pyplot_add_function(istatus,1,"",nn,dlambdas,dtimes)
-call pyplot_add_function(istatus,9,"",nn,dlambdas,dlog)
+call pyplot_add_function(istatus,1,"Runtime",nn,dlambdas,dtimes)
+call pyplot_add_function(istatus,10,"k log(k)",nn,dlambdas,dlog)
 
-write(iw,"(A)") "ax.text(0.85, 0.90, 'k log(k)',"
-write(iw,"(A)") "verticalalignment='bottom', horizontalalignment='right',"
-write(iw,"(A)") "transform=ax.transAxes,"
-write(iw,"(A)") "color='black', fontsize=12)"
+! write(iw,"(A)") "ax.text(0.85, 0.90, 'k log(k)',"
+! write(iw,"(A)") "verticalalignment='bottom', horizontalalignment='right',"
+! write(iw,"(A)") "transform=ax.transAxes,"
+! write(iw,"(A)") "color='black', fontsize=12)"
 
 call pyplot_ylabel(istatus,"Solve time (seconds)")
 call pyplot_xlabel(istatus,"Wavenumber k")

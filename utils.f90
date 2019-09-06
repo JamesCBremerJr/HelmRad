@@ -1461,7 +1461,6 @@ end do
 
 write(iw,"(A)") "fig, ax = plt.subplots()"
 write(iw,"(A)") "mpl.rcParams.update({'font.size': 16})"
-
 if (len(xlabel) .gt. 0) then
 write (iw,"(A,A,A)") 'ax.set(xlabel="',xlabel,'")'
 endif
@@ -1470,7 +1469,7 @@ if (len(ylabel) .gt. 0) then
 write (iw,"(A,A,A)") 'ax.set(ylabel="',ylabel,'")'
 endif
 
-write(iw,"(A)") "ax.plot(xs,ys)"
+write(iw,"(A)") "ax.plot(xs,ys,linewidth=2.5)"
 
 write(iw,"(A)") 'ax.grid()'
 write(iw,"(A,A,A)") 'fig.savefig("',filename,'")'
@@ -2132,9 +2131,9 @@ endif
 
 if (len(label) .gt. 0) then
 ilabel = 1
-write(iw,"(A,A,A,A,A,A,A)") "ax.plot(",xname,",",yname,",'",style,"',linewidth=1",",label='",label,"')"
+write(iw,"(A,A,A,A,A,A,A)") "ax.plot(",xname,",",yname,",'",style,"',linewidth=1.5",",label='",label,"')"
 else
-write(iw,"(A,A,A,A,A,A,A)") "ax.plot(",xname,",",yname,",'",style,"',linewidth=1)"
+write(iw,"(A,A,A,A,A,A,A)") "ax.plot(",xname,",",yname,",'",style,"',linewidth=1.5)"
 endif
 
 

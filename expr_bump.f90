@@ -584,14 +584,16 @@ if (derrs(jj) == -1) then
 write (iw,"(A)",advance='no') "-"
 else
 
-if (jj .le. jj0) then
+
+if (jj .le. jj0 )then
 call write_table_double(iw,derrs(jj))
 else
-write(iw,'(A)',advance='no') "("
-call write_table_double(iw,derrs(jj))
-write(iw,'(A)',advance='no') ") "
-endif
 
+write (iw,"(A)",advance="no") "$\left("
+call write_table_double(iw,derrs(jj))
+write (iw,"(A)",advance="no") "$\right)"
+
+endif
 endif
 
 call write_table_next(iw)
@@ -625,14 +627,14 @@ open(iw,FILE='bump_graph1.py')
 call pyplot_begin(iw,istatus)
 
 
-call pyplot_add_function(istatus,1,"",nn,dlambdas,dinits)
-call pyplot_add_function(istatus,9,"",nn,dlambdas,dlogs1)
+call pyplot_add_function(istatus,1,"Runtime",nn,dlambdas,dinits)
+call pyplot_add_function(istatus,10,"k log(k)",nn,dlambdas,dlogs1)
 
 
-write(iw,"(A)") "ax.text(0.90, 0.90, 'k log(k)',"
-write(iw,"(A)") "verticalalignment='bottom', horizontalalignment='right',"
-write(iw,"(A)") "transform=ax.transAxes,"
-write(iw,"(A)") "color='black', fontsize=12)"
+! write(iw,"(A)") "ax.text(0.90, 0.90, 'k log(k)',"
+! write(iw,"(A)") "verticalalignment='bottom', horizontalalignment='right',"
+! write(iw,"(A)") "transform=ax.transAxes,"
+! write(iw,"(A)") "color='black', fontsize=12)"
 
 call pyplot_xlabel(istatus,"Wavenumber k")
 call pyplot_ylabel(istatus,"Precomputation time (seconds)")
