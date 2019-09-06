@@ -48,31 +48,31 @@ data                      pi  / 3.14159265358979323846264338327950288d0 /
 complex*32                :: zz1,zz2
 
 ! plane wave at angle t0 
-! t0    = pi/4
-! vals  = exp(ima * rs * dlambda * cos(ts-t0) )
-! ders  = exp(ima * rs * dlambda * cos(ts-t0) ) * ima * dlambda * cos(ts-t0)
+t0    = pi /  4
+vals  = exp(ima * rs * dlambda * cos(ts-t0) )
+ders  = exp(ima * rs * dlambda * cos(ts-t0) ) * ima * dlambda * cos(ts-t0)
 
 
-! circular wave centered at (x0,y0)
-x0 = 0
-y0 = 6
+! ! circular wave centered at (x0,y0)
+! x0 = 0
+! y0 = 6
 
-do i=1,n
-r       = rs(i)
-t       = ts(i)
-x       = r*cos(t)
-y       = r*sin(t)
-z0      = x0 + ima*y0
-z       = x  + ima*y
+! do i=1,n
+! r       = rs(i)
+! t       = ts(i)
+! x       = r*cos(t)
+! y       = r*sin(t)
+! z0      = x0 + ima*y0
+! z       = x  + ima*y
 
-z       = dlambda*abs(z-z0)
-ifexpon = 1
-call hank103(z,h0,h1,ifexpon)
+! z       = dlambda*abs(z-z0)
+! ifexpon = 1
+! call hank103(z,h0,h1,ifexpon)
 
-vals(i) = h0
-ders(i) = dlambda*h1*(-r+x0*cos(t) + y0*sin(t))/sqrt((x0-x)**2+(y0-y)**2)
+! vals(i) = h0
+! ders(i) = dlambda*h1*(-r+x0*cos(t) + y0*sin(t))/sqrt((x0-x)**2+(y0-y)**2)
 
-end do
+! end do
 
 end subroutine
 
@@ -302,7 +302,7 @@ double complex                :: val_tot, val_scat
 ima     = (0.0d0,1.0d0)
 pi      = acos(-1.0d0)
 
-dlambda = 2**12
+dlambda = 2**11
 R       = 4                ! radius of  the scatterer
 R2      = 8                ! dimensions of the region to plot
 
@@ -311,9 +311,10 @@ eps     = 1.0d-12
 ifout   = 1
 ipart   = 1
 
-iwhich = 1
+iwhich = 3
 
-if (dlambda .lt. 32) m = m + 20
+
+! if (dlambda .lt. 32) m = m + 20
 
 
 
@@ -334,26 +335,20 @@ endif
 call helmrad_init(ifout,eps,m,xsings,R,dlambda,potfun,userptr,helmdata)
 call helmrad_solve(helmdata,wavefun,userptr,scatdata)
 
-nnz = 0
-do i=1,m
-if( abs(scatdata%tot_coefs(i)) .gt.  1.0d-30) nnz = nnz+1
-end do
+rr = R/2
+tt = pi/4
+call helmrad_eval(helmdata,scatdata,wavefun,userptr,rr,tt,val_tot,val_scat)
 
-dd1 = nnz
-dd2 = 2*m+1
+print *,val_tot
+print *,val_scat
 
-print *,nnz,2*m+1,dd1/dd2
+stop
 
-! r = R
-! t = pi/4
-! call helmrad_eval(helmdata,scatdata,wavefun,userptr,r,t,val_tot,val_scat)
-! stop
 
-! call prinz("scatdata%in_coefs  = ",scatdata%in_coefs)
-! call prinz("scatdata%tot_coefs  = ",scatdata%tot_coefs)
-!call prinz("scatdata%scat_coefs = ",scatdata%scat_coefs)
+call prinz("scatdata%in_coefs  = ",scatdata%in_coefs)
+call prinz("scatdata%tot_coefs  = ",scatdata%tot_coefs)
+call prinz("scatdata%scat_coefs = ",scatdata%scat_coefs)
 
-!call image_output(helmdata,scatdata,1,"total.pdf","scattered.pdf",R2,dlambda,wavefun,userptr)
 
 
 end program

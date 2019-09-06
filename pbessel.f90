@@ -217,7 +217,6 @@ real*16                          :: a1,a2,c1,c2,b1,b2
 !  use the adaptive procedure when more accuracy is required
 !
 
-
 ier        = 0
 eps0       = epsilon(0.0d0)
 pi         = acos(-1.0d0)
@@ -232,18 +231,16 @@ allocate ( isings(1000) )
 
 nints   = 0
 
+! a = 1.0d-7
 
 dd = -300
-a  = exp( ( dd + dnu*log(2.0d0) - dnu*log(dlambda) +  log_gamma(1+dnu) ) / (dnu+0.5d0) ) 
-a  = min(1.0d-2,a)
-a  = max(1.0d-7,a)
-b  = R
-
-! a = 1.0d-7
+a   = exp( ( dd + dnu*log(2.0d0) - dnu*log(dlambda) +  log_gamma(1+dnu) ) / (dnu+0.5d0) ) 
+a   = min(1.0d-2,a)
+a   = max(1.0d-7,a)
+b   = R
 
 if (dnu .eq. 0)                        a = 1.0d-12
 if (eps .lt. 1.0d-16 .AND. dnu .eq. 0) a = 1.0d-15
-
 
 nn                  = nsings+1
 xsings0(1)          = a
@@ -286,8 +283,6 @@ ab(2,nints) = b0
 
 end do
 
-
-
 !
 !  If the last interval is too small and oscillatory, the windowing
 !  algorithm can run into trouble.  Best to simply make it bigger if need be.
@@ -295,7 +290,6 @@ end do
 if (ab(2,nints) - ab(1,nints) .lt. 0.1d0) then
 ab(2,nints) = ab(1,nints) + 0.1d0
 endif
-
 
 !
 ! Traverse the intervals, solving the problem on each interval
@@ -315,28 +309,24 @@ ts(1) = (a0+b0)/2
 call qfun(ising,1,ts,qvals,userptr)
 qvals = dlambda**2*(qvals+1) + (0.25d0 - dnu**2)/ts**2
 
-
 ifosc = 0
 if (qvals(1) > 0) ifosc = 1
+
 
 ! indicate to the solvers whether we are on the left-most interval or not; this
 ! influences the choice of discretization grid in the nonoscillatory case
 
 ifleft  = 0
-
 if (int .eq. 1)     ifleft = 1
-
 
 if (ifosc .eq. 0) then
 call pbessel_nonoscillatory(ising,ifleft,eps,a0,b0,chebdata,dlambda,dnu,qfun,userptr, &
   soldata%sols(int))
-call elapsed(t2)
 
 else
 
 call pbessel_oscillatory(ising,ifleft,eps,a0,b0,chebdata,dlambda,dnu,qfun,userptr, &
   soldata%sols(int))
-
 
 endif
 end do
@@ -362,36 +352,63 @@ endif
 if (ifleft .eq. 1) then
 nn  = dnu
 c1  = sqrt(pi/2)*bessel_jn(nn,dlambda*a0)*sqrt(a0)
-c2 = sqrt(pi/2)*&
+c2  = sqrt(pi/2)*&
   (2*a0*dlambda * bessel_jn(nn-1,dlambda*a0) + (1-2*dnu)*bessel_jn(nn,dlambda*a0)) / (2*sqrt(a0))
 
 else
 
+
 b1 = soldata%sols(int-1)%a1
 b2 = soldata%sols(int-1)%a2
+
+
 call pbessel_eval_interval2(soldata%sols(int-1),a0,uval1,uder1,vval1,vder1)
 
 c1 = b1*uval1 + b2*vval1
 c2 = b1*uder1 + b2*vder1
+
+
 endif
 
 call pbessel_eval_interval2(soldata%sols(int),a0,uval2,uder2,vval2,vder2)
 
 
+
 det = uval2*vder2 - uder2 * vval2
+
+
+if (abs(det) .ge. 1.0d-100) then
+
 a1  = (vder2  * c1 - vval2 * c2)/det
 a2  = (-uder2 * c1 + uval2 * c2)/det
 
-1000 continue
+else
 
+a1 = 1
+a2 = 0
+
+
+do ii=int-1,1,-1
+soldata%sols(ii)%a1 = 0
+soldata%sols(ii)%a2 = 0
+end do
+
+endif
+
+
+
+1000 continue
 
 soldata%sols(int)%a1 = a1
 soldata%sols(int)%a2 = a2
+
+
 
 end do
 
 !
 !  Normalize the solution at t = R if it is large there!
+!
 
 a1 = soldata%sols(nints)%a1 
 a2 = soldata%sols(nints)%a2 
@@ -400,17 +417,15 @@ call pbessel_eval_interval2(soldata%sols(nints),R,uval1,uder1,vval1,vder1)
 c1 = a1 * uval1 + a2*vval1
 !c1 = abs(c1)
 
+
 if (abs(c1) .gt. 1.0d0) then
 
 do int=1,nints
-a0                   = ab(1,int)
-b0                   = ab(2,int)
 
 soldata%sols(int)%a1 = soldata%sols(int)%a1 / c1
 soldata%sols(int)%a2 = soldata%sols(int)%a2 / c1
 
-a1 = soldata%sols(int)%a1
-a2 = soldata%sols(int)%a2
+
 
 end do
 
@@ -668,7 +683,7 @@ stop
 endif
 
 rb = 0
-call  rriccati_int_back(chebdata,nints,ab,psip,psipp,rb,psi)
+call rriccati_int_back(chebdata,nints,ab,psip,psipp,rb,psi)
 
 rb = 0
 call rriccati_tvp_adap(ier,eps,chebdata,a,b,pbessel_riccati_qfun1,rb,&
@@ -795,6 +810,8 @@ end subroutine
 
 
 
+
+
 subroutine pbessel_eval_interval2(intdata,t,uval,uder,vval,vder)
 implicit double precision (a-h,o-z)
 type(pbessel_interval), intent(in)         :: intdata
@@ -837,23 +854,23 @@ call chebpw_eval22(intdata%nints_psi2,intdata%ab_psi2,k,intdata%psi2coefs,intdat
 
 
 
-x1 = psi1
-x2 = psi1p
-
+x1   = psi1
+x2   = psi1p
 
 uval = exp(x1)
 uder = exp(x1)*x2
 
-x1 = psi2
-x2 = psi2p
+x1   = psi2
+x2   = psi2p
 
 vval = exp(x1)
 vder = exp(x1)*x2
 
+!print *,psi1,psi1p,psi2,psi2p
+
 endif
 
 end subroutine
-
 
 
 subroutine pbessel_riccati_qfun1(k,ts,qs,userptr)

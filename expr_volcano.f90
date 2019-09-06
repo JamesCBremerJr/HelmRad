@@ -26,30 +26,30 @@ data                      ima / (0.0d0,1.0d0) /
 data                      pi  / 3.14159265358979323846264338327950288d0 /
 
 ! plane wave at angle t0 
-! t0    = pi /  4
-! vals  = exp(ima * rs * dlambda * cos(ts-t0) )
-! ders  = exp(ima * rs * dlambda * cos(ts-t0) ) * ima * dlambda * cos(ts-t0)
+t0    = pi /  4
+vals  = exp(ima * rs * dlambda * cos(ts-t0) )
+ders  = exp(ima * rs * dlambda * cos(ts-t0) ) * ima * dlambda * cos(ts-t0)
 
-! circular wave centered at (x0,y0)
-x0 = 0
-y0 = 6
+! ! circular wave centered at (x0,y0)
+! x0 = 0
+! y0 = 6
 
-do i=1,n
-r       = rs(i)
-t       = ts(i)
-x       = r*cos(t)
-y       = r*sin(t)
-z0      = x0 + ima*y0
-z       = x  + ima*y
+! do i=1,n
+! r       = rs(i)
+! t       = ts(i)
+! x       = r*cos(t)
+! y       = r*sin(t)
+! z0      = x0 + ima*y0
+! z       = x  + ima*y
 
-z       = dlambda*abs(z-z0)
-ifexpon = 1
-call hank103(z,h0,h1,ifexpon)
+! z       = dlambda*abs(z-z0)
+! ifexpon = 1
+! call hank103(z,h0,h1,ifexpon)
 
-vals(i) = h0
-ders(i) = dlambda*h1*(-r+x0*cos(t) + y0*sin(t))/sqrt((x0-x)**2+(y0-y)**2)
+! vals(i) = h0
+! ders(i) = dlambda*h1*(-r+x0*cos(t) + y0*sin(t))/sqrt((x0-x)**2+(y0-y)**2)
 
-end do
+! end do
 
 end subroutine
 
@@ -182,10 +182,6 @@ ts(1) = atan2(y,x)
 
 call helmrad_eval(helmdata,scatdata,wavefun,userptr,rs(1),ts(1),val_tot,val_scat)
 
-if (isNaN(real(val_tot))) then
-print *,rs(1),ts(1),x,y,val_tot,val_scat
-stop
-endif
 
 utot(nn-j+1,nn-i+1)  = val_tot
 uscat(nn-j+1,nn-i+1) = val_scat

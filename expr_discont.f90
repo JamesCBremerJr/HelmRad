@@ -34,7 +34,6 @@ vals  = exp(ima * rs * dlambda * cos(ts-t0) )
 ders  = exp(ima * rs * dlambda * cos(ts-t0) ) * ima * dlambda * cos(ts-t0)
 
 
-
 end subroutine
 
 
@@ -167,11 +166,6 @@ ts(1) = atan2(y,x)
 
 call helmrad_eval(helmdata,scatdata,wavefun,userptr,rs(1),ts(1),val_tot,val_scat)
 
-if (isNaN(real(val_tot))) then
-print *,rs(1),ts(1),x,y,val_tot,val_scat
-stop
-endif
-
 utot(nn-j+1,nn-i+1)  = val_tot
 uscat(nn-j+1,nn-i+1) = val_scat
 
@@ -227,7 +221,7 @@ R   = 4
 jj1 = 4
 jj2 = 17
 jj3 = 17
-jj0 = 7
+jj0 = 8
 
 allocate(xsings(3))
 xsings(1) = 1
@@ -252,19 +246,19 @@ ifout   = 1
 
 ! produce a solution
 
-call prin2("dlambda = ",dlambda)
+!call prin2("dlambda = ",dlambda)
 
 call elapsed(t1)
 call helmrad_init(ifout,eps,m,xsings,R,dlambda,potfun,userptr,helmdata)
 call helmrad_solve(helmdata,wavefun,userptr,scatdata)
 call elapsed(t2)
 
-tsolve = t2-t1
-
+tsolve  = t2-t1
 dmax    = -1
 tverify = -1
 
 ! verify the accuracy of the obtained solution
+if (jj .le. jj0) then
 call elapsed(t1)
 
 dmax = 0.0d0
@@ -275,10 +269,10 @@ n        = m
 
 if (jj .eq. 4) l = 40
 if (jj .eq. 5) l = 60
-if (jj .eq. 6) l = 80
+if (jj .eq. 6) l = 100
 if (jj .eq. 7) l = 140
 if (jj .eq. 8) l = 200
-if (ii .eq. 0) l = l *2
+if (ii .eq. 0) l = l*2
 
 R1   =  0.0d0+1.0d0*ii
 R2   =  1.000+1.0d0*ii
@@ -337,17 +331,17 @@ end do
 call elapsed(t2)
 
 tverify = t2-t1
+endif
 
 
 ! sample the solution and output the samples to the disk
-call elapsed(t1)
 nn = 50
 allocate(x(nn,nn),xs0(nn),ys0(nn))
 ncount = 0
 
 
 
-!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,i,xx,yy,rr,tt,val_tot,val_scat)
+!$OMP PARALLEL DEFAULT(SHARED) PRIVATE(j,i,xx,yy,rr,tt,val_tot,val_scat,dd)
 !$OMP DO SCHEDULE(DYNAMIC)
 do i=1,nn
 xx     = -R + 2*R * (i-1.0d0) / (nn-1.0d0)
@@ -363,11 +357,17 @@ call helmrad_eval(helmdata,scatdata,wavefun,userptr,rr,tt,val_tot,val_scat)
 
 x(i,j) = val_tot
 
+dd = abs(val_tot)
+if (isnan(dd)) then
+print *,dlambda,xx,yy,rr,tt,"NaN"
+stop
+endif
+
 end do
 
 !$OMP CRITICAL
-ncount=ncount+1
-write (*,'("     ",I5.5,"/",I5.5,A)',advance='no')  ncount,nn,13
+! ncount=ncount+1
+! write (*,'("     ",I5.5,"/",I5.5,A)',advance='no')  ncount,nn,13
 !$OMP END CRITICAL
 
 end do
@@ -386,17 +386,16 @@ deallocate(x,xs0,ys0)
 
 call elapsed(t2)
 
-toutput = t2-t1
 
-lambda =  dlambda
-write (*,"(I8.8,' ',D10.3,' ',D10.3, ' ',D10.3, ' ',D10.3, ' ',D10.3)") &
-  lambda,tsolve,tverify,toutput,dmax
+! lambda =  dlambda
+! write (*,"(I8.8,' ',D10.3,' ',D10.3, ' ',D10.3, ' ',D10.3)") &
+!   lambda,tsolve,tverify,dmax
 
-write (13,"(I8.8,' ',D10.3,' ',D10.3, ' ',D10.3, ' ',D10.3, ' ',D10.3)") &
-  lambda,tsolve,tverify,toutput,dmax
+! write (13,"(I8.8,' ',D10.3,' ',D10.3, ' ',D10.3, ' ',D10.3)") &
+!   lambda,tsolve,tverify,dmax
 
-write (*,*) ""
-write (13,*) ""
+! write (*,*) ""
+! write (13,*) ""
 
 end do
 
@@ -409,8 +408,6 @@ endif
 !
 !  Produce images of the incident field, the total field and the scatterd field
 !
-
-
 call prina("producing images at 16 wavelengths")
 
 dlambda = 16
@@ -482,7 +479,7 @@ do jj=jj1,jj3
 dlambda = 2.0d0**jj
 eps     = 1.0d-12
 R       = 4
-ifout   = 0
+ifout   = 1
 m       = R*dlambda*pi/2
 
 call elapsed(t1)
@@ -497,6 +494,9 @@ tsolve = t2-t1
 
 
 
+! call prinz("tot_coefs = ",scatdata%tot_coefs)
+! call prinz("scat_coefs = ",scatdata%scat_coefs)
+
 if (jj .le. jj2) then
 
 read (iw,"(D24.16)")    dlambda0
@@ -509,6 +509,9 @@ read (iw,"(D24.16)")   xs0
 read (iw,"(D24.16)")   ys0
 read (iw,"(D24.16)")   x
 
+
+! call prin2("xs0 = ",xs0)
+! call prin2("ys0 = ",ys0)
 
 !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(i,j,xx,yy,rr,tt,val_tot,val_scat)
 !$OMP DO
@@ -531,6 +534,7 @@ end do
 !$OMP END PARALLEL
 
 
+! call prinz("y = ",y)
 
 derr = maxval(abs(x-y))
 deallocate(x,y,xs0,ys0)

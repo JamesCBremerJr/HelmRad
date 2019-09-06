@@ -45,10 +45,11 @@ call chebexps(k,chebdata)
 eps0    =    epsilon(0.0d0)
 eps     =    1.0d-12
 pi      =    acos(-1.0d0)
-R       =    4
+R       =    3.0d0
 
-dlambda = 2.0d0**17
-dnu     = 454545
+dlambda = 1024
+dnu     = R*dlambda*pi/2
+dnu     = 2*dlambda
 
 allocate(xsings(3))
 xsings(1) = 1
@@ -56,6 +57,14 @@ xsings(2) = 2
 xsings(3) = 3
 
 call pbessel_solve(eps,chebdata,xsings,R,dlambda,dnu,qfun,userptr,soldata)
+
+t = R
+call pbessel_eval(soldata,t,val,der)
+print *,val
+
+t = 2.0d0
+call pbessel_eval(soldata,t,val,der)
+print *,val
 
 stop
 
