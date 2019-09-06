@@ -626,7 +626,7 @@ else
 
 write (iw,"(A)",advance="no") "$\left("
 call write_table_double(iw,derrs(jj))
-write (iw,"(A)",advance="no") "$\right)"
+write (iw,"(A)",advance="no") "\right)$"
 
 endif
 
